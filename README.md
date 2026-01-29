@@ -42,6 +42,7 @@ This way you can use artisan.
 
 ```bash
 php artisan migrate:fresh
+php artisan key:generate
 php artisan db:seed --class=Database\\Seeders\\FakeDataSeeder
 ```
 

@@ -260,7 +260,7 @@ fi
 
 # Attesa stabilizzazione container
 log_step "Attesa stabilizzazione container..."
-for i in {5..1}; do
+for i in {10..1}; do
     echo -ne "   $i secondi...\r"
     sleep 1
 done
@@ -287,8 +287,39 @@ log_success "Container '$CONTAINER_NAME' in esecuzione"
 CONTAINER_STATUS=$(docker ps --filter "name=${CONTAINER_NAME}" --format "{{.Status}}")
 log_info "Status: ${CONTAINER_STATUS}"
 
-# Esecuzione seeder
-echo -e "\n${BOLD}${BLUE}═══ Fase 4: Popolamento Database ═══${NC}\n"
+
+# Preparazione e popolamento database
+echo -e "\n${BOLD}${BLUE}═══ Fase 4: Preparazione Database ═══${NC}\n"
+
+# Migrate fresh
+log_step "Ricreazione database (migrate:fresh)..."
+docker exec -it $CONTAINER_NAME php artisan migrate:fresh 2>&1 | while IFS= read -r line; do
+    echo "  $line"
+done
+
+if [ ${PIPESTATUS[0]} -ne 0 ]; then
+    echo ""
+    log_error "Errore durante migrate:fresh"
+    exit 1
+fi
+echo ""
+log_success "Database ricreato con successo"
+
+# Key generate
+log_step "Generazione chiave applicazione..."
+docker exec -it $CONTAINER_NAME php artisan key:generate 2>&1 | while IFS= read -r line; do
+    echo "  $line"
+done
+
+if [ ${PIPESTATUS[0]} -ne 0 ]; then
+    echo ""
+    log_error "Errore durante key:generate"
+    exit 1
+fi
+echo ""
+log_success "Chiave applicazione generata"
+
+# Seeder
 log_step "Esecuzione seeder del database..."
 log_info "Popolamento con dati di test in corso..."
 echo ""
